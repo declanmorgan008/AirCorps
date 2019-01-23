@@ -14,9 +14,19 @@ public class CharacterController : MonoBehaviour {
     private float targetAngle;
     private float weight;
     private float deltaAngle = 0;
+
     private float boostingTrigger = 0;
     private bool boostingBumber = false;
-    float gravity = 0.3f;
+    private bool respawnButton = false;
+
+    private Vector2 gravity = new Vector2(0f, -5f);
+    private Vector2 initPos;
+
+    private enum states {flying, gliding, dead };
+    private int state = 0;
+
+    private int mHP = 3;
+    private int cHP = 3;
 
     private Vector2 inputDirection = Vector2.zero;
     private Vector2 inputDirectionLast = Vector2.zero;
@@ -31,6 +41,8 @@ public class CharacterController : MonoBehaviour {
         spriteRenderer = GetComponent<SpriteRenderer>();
         velocity.x = moveSpeed;
         velocity.y = 0;
+        initPos = new Vector2(rb2d.transform.position.x, rb2d.transform.position.y);
+
     }
 
     // Use this for initialization
@@ -57,56 +69,83 @@ public class CharacterController : MonoBehaviour {
         boostingTrigger = Input.GetAxis("BoosterTrigger");
         boostingBumber = Input.GetButton("BoosterBumper");
 
-        angle = transform.eulerAngles.z;
-        targetAngle = Vector2.Angle(Vector2.right, inputDirection);
-
-        if (inputDirection.y < 0)
+        switch (state)
         {
-            targetAngle = 360 - targetAngle;
-        }
+            case (int)states.flying:
 
-        /*
-        if (targetAngle > 90 && targetAngle < 270 && (angle <= 90 || angle >= 270))
-        {
-            spriteRenderer.flipY = !spriteRenderer.flipY;
-        } else if ((targetAngle <= 90 || targetAngle >= 270) && angle > 90 && angle < 270)
-        {
-            spriteRenderer.flipY = !spriteRenderer.flipY;
-        }*/
+                if(boostingBumber || boostingTrigger != 0)
+                {
+                    state = (int)states.gliding;
+                    goto case 1;
+                }
 
-        if (boostingTrigger == 0 && !boostingBumber)
-        {
-            deltaAngle = Mathf.Min(Mathf.Abs(targetAngle - angle), 360 - Mathf.Abs(targetAngle - angle));
+                angle = transform.eulerAngles.z;
+                targetAngle = Vector2.Angle(Vector2.right, inputDirection);
 
-            
-            deltaAngle = Mathf.Min(deltaAngle, maxAngle);
+                if (inputDirection.y < 0)
+                {
+                    targetAngle = 360 - targetAngle;
+                }
 
-            
-            if(angle > targetAngle && !(angle >= 270 && targetAngle <= 90) 
-                && !(angle > 180 && targetAngle < 90 && angle - targetAngle > 180)
-                || (targetAngle >= 270 && angle < 90))
-            {
-                deltaAngle = -deltaAngle;
-            }
+                deltaAngle = Mathf.Min(Mathf.Min(Mathf.Abs(targetAngle - angle), 360 - Mathf.Abs(targetAngle - angle)), maxAngle);
 
-            //deltaAngle = Mathf.Sign(Vector2.SignedAngle(rb2d.velocity.normalized, inputDirection.normalized))*deltaAngle;
+                if (angle > targetAngle && !(angle >= 270 && targetAngle <= 90)
+                    && !(angle > 180 && targetAngle < 90 && angle - targetAngle > 180)
+                    || (targetAngle >= 270 && angle < 90))
+                {
+                    deltaAngle = -deltaAngle;
+                }
 
-            Debug.Log("Angle: " + angle + ", Target: " + targetAngle + ", Delta: " + deltaAngle);
+                Rotate(transform, deltaAngle);
+                angle = transform.eulerAngles.z;
 
-            Rotate(transform, deltaAngle);
-            angle = transform.eulerAngles.z;
+                velocity.x = Mathf.Cos(Mathf.Deg2Rad * angle) * accel;
+                velocity.y = Mathf.Sin(Mathf.Deg2Rad * angle) * accel;
 
-            velocity.x = Mathf.Cos(Mathf.Deg2Rad * angle) * accel;
-            velocity.y = Mathf.Sin(Mathf.Deg2Rad * angle) * accel;
+                ThrustForward(velocity);
+                ApplyDrag();
+                ClampVelocity();
 
-            ThrustForward(velocity);
-            ApplyDrag();
-            ClampVelocity();
-        }
-        else
-        {
-            Rotate(transform, targetAngle - angle);
-            angle = transform.eulerAngles.z;
+                break;
+
+            case (int)states.gliding:
+
+                if (!boostingBumber && boostingTrigger == 0)
+                {
+                    state = (int)states.flying;
+                    goto case 0;
+                }
+
+                angle = transform.eulerAngles.z;
+                targetAngle = Vector2.Angle(Vector2.right, inputDirection);
+
+                if (inputDirection.y < 0)
+                {
+                    targetAngle = 360 - targetAngle;
+                }
+
+                Rotate(transform, targetAngle - angle);
+                angle = transform.eulerAngles.z;
+
+                break;
+
+            case (int)states.dead:
+
+                ThrustForward(gravity);
+
+                respawnButton = Input.GetButton("RespawnButton");
+
+                if ((boostingBumber || boostingTrigger != 0) && respawnButton)
+                {
+                    Respawn();
+                }
+
+                break;
+
+            default:
+
+                break;
+
         }
     }
 
@@ -165,5 +204,26 @@ public class CharacterController : MonoBehaviour {
     void Rotate(Transform t, float amount)
     {
         t.Rotate(0, 0, amount);
+    }
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        if(state != (int)states.dead)
+        {
+            //rb2d.AddTorque(6f);
+            state = (int)states.dead;
+        }
+        
+    }
+
+    void Respawn()
+    {
+        rb2d.transform.position = initPos;
+        transform.rotation = Quaternion.identity;
+        state = (int)states.gliding;
+        rb2d.velocity = Vector2.zero;
+        rb2d.angularVelocity = 0f;
+        inputDirectionLast = Vector2.zero;
+        inputDirection = Vector2.zero;
     }
 }
