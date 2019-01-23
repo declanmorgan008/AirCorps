@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class CharacterController : MonoBehaviour {
 
-    private float moveSpeed = 2.3f;
-    private float accel = 5f;
+    private float moveSpeed = 4f;
+    private float accel = 10f;
     private float dCoef = 4f;
     private float maxAngle = 5f;
     private float dMax = 0.1f;
@@ -65,13 +65,14 @@ public class CharacterController : MonoBehaviour {
             targetAngle = 360 - targetAngle;
         }
 
+        /*
         if (targetAngle > 90 && targetAngle < 270 && (angle <= 90 || angle >= 270))
         {
             spriteRenderer.flipY = !spriteRenderer.flipY;
         } else if ((targetAngle <= 90 || targetAngle >= 270) && angle > 90 && angle < 270)
         {
             spriteRenderer.flipY = !spriteRenderer.flipY;
-        }
+        }*/
 
         if (boostingTrigger == 0 && !boostingBumber)
         {
