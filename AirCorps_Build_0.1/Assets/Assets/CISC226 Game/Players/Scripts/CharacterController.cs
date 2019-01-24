@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class CharacterController : MonoBehaviour {
 
-    private float moveSpeed = 4f;
-    private float accel = 10f;
-    private float dCoef = 4f;
-    private float maxAngle = 5f;
+    private float moveSpeed = 16f;
+    private float accel = 32f;
+    private float dCoef = 5f;
+    private float maxAngle = 6f;
     private float dMax = 0.1f;
     private float rotationSpeed = 3f;
     private float angle;
@@ -34,6 +34,8 @@ public class CharacterController : MonoBehaviour {
     private Vector2 velocity;
     private Rigidbody2D rb2d;
     private SpriteRenderer spriteRenderer;
+
+    public GameObject arrow;
 
     void OnEnable()
     {
@@ -69,6 +71,13 @@ public class CharacterController : MonoBehaviour {
         boostingTrigger = Input.GetAxis("BoosterTrigger");
         boostingBumber = Input.GetButton("BoosterBumper");
 
+        targetAngle = Vector2.Angle(Vector2.right, inputDirection);
+
+        if (inputDirection.y < 0)
+        {
+            targetAngle = 360 - targetAngle;
+        }
+
         switch (state)
         {
             case (int)states.flying:
@@ -80,12 +89,6 @@ public class CharacterController : MonoBehaviour {
                 }
 
                 angle = transform.eulerAngles.z;
-                targetAngle = Vector2.Angle(Vector2.right, inputDirection);
-
-                if (inputDirection.y < 0)
-                {
-                    targetAngle = 360 - targetAngle;
-                }
 
                 deltaAngle = Mathf.Min(Mathf.Min(Mathf.Abs(targetAngle - angle), 360 - Mathf.Abs(targetAngle - angle)), maxAngle);
 
@@ -117,12 +120,6 @@ public class CharacterController : MonoBehaviour {
                 }
 
                 angle = transform.eulerAngles.z;
-                targetAngle = Vector2.Angle(Vector2.right, inputDirection);
-
-                if (inputDirection.y < 0)
-                {
-                    targetAngle = 360 - targetAngle;
-                }
 
                 Rotate(transform, targetAngle - angle);
                 angle = transform.eulerAngles.z;
@@ -147,6 +144,9 @@ public class CharacterController : MonoBehaviour {
                 break;
 
         }
+
+        arrow.transform.Rotate(0, 0, targetAngle - arrow.transform.eulerAngles.z);
+        arrow.transform.position = transform.position;
     }
 
     void Movement(Vector2 move)
