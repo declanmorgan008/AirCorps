@@ -6,7 +6,7 @@ public class CharacterController : MonoBehaviour {
 
     private float moveSpeed = 16f;
     private float accel = 32f;
-    private float dCoef = 5f;
+    private float dCoef = 4.2f;
     private float maxAngle = 6f;
     private float dMax = 0.1f;
     private float rotationSpeed = 3f;
@@ -19,7 +19,7 @@ public class CharacterController : MonoBehaviour {
     private bool boostingBumber = false;
     private bool respawnButton = false;
 
-    private Vector2 gravity = new Vector2(0f, -5f);
+    private Vector2 gravity = new Vector2(0f, -20f);
     private Vector2 initPos;
 
     private enum states {flying, gliding, dead };
@@ -184,7 +184,7 @@ public class CharacterController : MonoBehaviour {
         float speed = mag;
         Vector2 delta = Vector2.zero;
 
-        mag = inputDirection.magnitude;
+        mag = velocity.magnitude;
         targetX = (targetX / mag) * speed;
         targetY = (targetY / mag) * speed;
 

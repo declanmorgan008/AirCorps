@@ -38,6 +38,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Collision Mask
+    uniqueID: 227450559
+    locked: 0
   - name: Background
     uniqueID: 2855743439
     locked: 0
