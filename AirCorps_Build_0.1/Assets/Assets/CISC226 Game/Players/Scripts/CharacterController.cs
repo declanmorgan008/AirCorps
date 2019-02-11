@@ -15,14 +15,18 @@ public class CharacterController : MonoBehaviour {
     private float weight;
     private float deltaAngle = 0;
 
+    private int fireRate = 3600 / 600;
+    private int fireCool = 0;
+
     private float boostingTrigger = 0;
     private bool boostingBumber = false;
     private bool respawnButton = false;
+    private bool shootButton = false;
 
     private Vector2 gravity = new Vector2(0f, -20f);
     private Vector2 initPos;
 
-    private enum states {flying, gliding, dead };
+    private enum states {flying, gliding, dead};
     private int state = 0;
 
     private int mHP = 3;
@@ -36,11 +40,19 @@ public class CharacterController : MonoBehaviour {
     private SpriteRenderer spriteRenderer;
 
     public GameObject arrow;
+    public GameObject booster;
+    public Sprite deadSprite;
+    public Sprite aliveSprite;
+    public GameObject scrap;
+    public GameObject barrel;
+    public GameObject bullet;
+    private TrailRenderer trail;
 
     void OnEnable()
     {
         rb2d = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        trail = booster.GetComponent<TrailRenderer>();
         velocity.x = moveSpeed;
         velocity.y = 0;
         initPos = new Vector2(rb2d.transform.position.x, rb2d.transform.position.y);
@@ -70,12 +82,18 @@ public class CharacterController : MonoBehaviour {
 
         boostingTrigger = Input.GetAxis("BoosterTrigger");
         boostingBumber = Input.GetButton("BoosterBumper");
+        shootButton = Input.GetButton("ShootBumper");
 
         targetAngle = Vector2.Angle(Vector2.right, inputDirection);
 
         if (inputDirection.y < 0)
         {
             targetAngle = 360 - targetAngle;
+        }
+
+        if(fireCool > 0)
+        {
+            fireCool--;
         }
 
         switch (state)
@@ -85,7 +103,13 @@ public class CharacterController : MonoBehaviour {
                 if(boostingBumber || boostingTrigger != 0)
                 {
                     state = (int)states.gliding;
+                    trail.emitting = false;
                     goto case 1;
+                }
+
+                if (shootButton && fireCool == 0)
+                {
+                    Shoot();
                 }
 
                 angle = transform.eulerAngles.z;
@@ -116,7 +140,13 @@ public class CharacterController : MonoBehaviour {
                 if (!boostingBumber && boostingTrigger == 0)
                 {
                     state = (int)states.flying;
+                    trail.emitting = true;
                     goto case 0;
+                }
+
+                if (shootButton && fireCool == 0)
+                {
+                    Shoot();
                 }
 
                 angle = transform.eulerAngles.z;
@@ -208,12 +238,43 @@ public class CharacterController : MonoBehaviour {
 
     void OnCollisionEnter2D(Collision2D col)
     {
-        if(state != (int)states.dead)
+        if(state != (int)states.dead && col.gameObject.name == "CollisionMask")
         {
             //rb2d.AddTorque(6f);
             state = (int)states.dead;
+            trail.emitting = false;
+            spriteRenderer.sprite = deadSprite;
+
+            CreateScrap(45);
+
+        } else
+        {
+            rb2d.angularVelocity = 0;
+            rb2d.velocity = rb2d.velocity;
         }
         
+    }
+
+    void CreateScrap(int n)
+    {
+        GameObject temp;
+        Rigidbody2D rbTemp;
+        float mag = 40f;
+
+        for (int i = 0; i < n; i++)
+        {
+            temp = Instantiate(scrap, new Vector3(rb2d.transform.position.x, rb2d.transform.position.y, 0f), Quaternion.identity);
+            rbTemp = temp.GetComponent<Rigidbody2D>();
+            rbTemp.velocity = new Vector2(Random.RandomRange(-1f, 1f), Random.RandomRange(-1f, 1f)) * mag * Random.Range(0.8f, 1f);
+        }
+    }
+
+    void Shoot()
+    {
+        fireCool = fireRate;
+
+        GameObject temp = Instantiate(bullet, new Vector3(barrel.transform.position.x, barrel.transform.position.y, 0), transform.rotation);
+        temp.GetComponent<Rigidbody2D>().velocity = new Vector2(rb2d.velocity.x, rb2d.velocity.y);
     }
 
     void Respawn()
@@ -225,5 +286,6 @@ public class CharacterController : MonoBehaviour {
         rb2d.angularVelocity = 0f;
         inputDirectionLast = Vector2.zero;
         inputDirection = Vector2.zero;
+        spriteRenderer.sprite = aliveSprite;
     }
 }
