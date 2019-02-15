@@ -320,6 +320,7 @@
     <Compile Include="Assets\Assets\CISC226 Game\Players\Scripts\CharacterControllerMouse.cs" />
     <Compile Include="Assets\BulletControl.cs" />
     <Compile Include="Assets\scrapControl.cs" />
+    <Compile Include="Assets\TargetControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Packages\com.unity.2d.pixel-perfect\Editor\Unity.2D.PixelPerfect.Editor.asmdef" />
